@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Web3 DApp</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: auto;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        input {
+            padding: 10px;
+            margin: 5px;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>My Web3 DApp</h1>
+        <button id="connectBtn">Connect Wallet</button>
+        <div id="accountInfo" class="hidden">
+            <p><strong>Wallet Address:</strong> <span id="walletAddress"></span></p>
+            <p><strong>Balance:</strong> <span id="balance"></span> ETH</p>
+        </div>
+        <div id="sendTransaction" class="hidden">
+            <input type="text" id="toAddress" placeholder="Recipient Address" />
+            <input type="number" id="amount" placeholder="Amount in ETH" />
+            <button id="sendBtn">Send Transaction</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.6.1/dist/web3.min.js"></script>
+    <script>
+        let web3;
+        let userAccount;
+
+        // Check if the browser has MetaMask installed
+        if (typeof window.ethereum !== 'undefined') {
+            web3 = new Web3(window.ethereum);
+
+            document.getElementById('connectBtn').addEventListener('click', async () => {
+                try {
+                    // Request account access
+                    await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    userAccount = (await web3.eth.getAccounts())[0];
+
+                    // Display user account and balance
+                    displayAccountInfo();
+                } catch (error) {
+                    console.error("User denied account access", error);
+                }
+            });
+
+            // Function to display the user's wallet address and balance
+            async function displayAccountInfo() {
+                const balanceWei = await web3.eth.getBalance(userAccount);
+                const balanceEth = web3.utils.fromWei(balanceWei, 'ether');
+
+                document.getElementById('walletAddress').innerText = userAccount;
+                document.getElementById('balance').innerText = balanceEth;
+
+                document.getElementById('accountInfo').classList.remove('hidden');
+                document.getElementById('sendTransaction').classList.remove('hidden');
+            }
+
+            // Send transaction functionality
+            document.getElementById('sendBtn').addEventListener('click', async () => {
+                const toAddress = document.getElementById('toAddress').value;
+                const amount = document.getElementById('amount').value;
+
+                if (!web3.utils.isAddress(toAddress)) {
+                    alert("Invalid recipient address");
+                    return;
+                }
+
+                if (isNaN(amount) || amount <= 0) {
+                    alert("Invalid amount");
+                    return;
+                }
+
+                const amountInWei = web3.utils.toWei(amount, 'ether');
+                
+                try {
+                    await web3.eth.sendTransaction({
+                        from: userAccount,
+                        to: toAddress,
+                        value: amountInWei
+                    });
+
+                    alert("Transaction Sent!");
+                } catch (error) {
+                    console.error("Transaction failed", error);
+                }
+            });
+        } else {
+            alert('MetaMask not detected. Please install it to interact with this DApp.');
+        }
+    </script>
+</body>
+</html>
